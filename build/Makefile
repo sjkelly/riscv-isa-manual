@@ -8,19 +8,19 @@
 # build directory, copy the makefile there, and change the srcdir
 # variable accordingly.
 #
-# Note that the makefile assumes that the default dvips/ps2pdfwr 
-# commands "do the right thing" for fonts in pdfs. This is true on 
+# Note that the makefile assumes that the default dvips/ps2pdfwr
+# commands "do the right thing" for fonts in pdfs. This is true on
 # Athena/Linux and Fedora Core but is not true for older redhat installs ...
 #
 # At a minimum you should just change the main variable to be
-# the basename of your toplevel tex file. If you use a bibliography 
+# the basename of your toplevel tex file. If you use a bibliography
 # then you should set the bibfile variable to be the name of your
 # .bib file (assumed to be in the source directory).
 #
 
 srcdir  = ../src
 
-docs_with_bib = riscv-spec riscv-privileged 
+docs_with_bib = riscv-spec riscv-privileged
 docs_without_bib =
 
 srcs = $(wildcard $(srcdir)/*.tex)
@@ -32,6 +32,7 @@ bibs = $(srcdir)/riscv-spec.bib
 #=======================================================================
 
 PDFLATEX := TEXINPUTS=$(srcdir): pdflatex -interaction=nonstopmode -halt-on-error
+HTLATEX := TEXINPUTS=$(srcdir): htlatex
 BIBTEX := BIBINPUTS=$(srcdir): bibtex
 
 default : pdf
@@ -59,10 +60,25 @@ $(pdfs_without_bib): %.pdf: $(srcdir)/%.tex $(srcs) $(figs)
 	$(PDFLATEX) $*
 	$(PDFLATEX) $*
 
-junk += $(pdfs) *.aux *.log *.bbl *.blg *.toc *.out
+junk += $(pdfs) *.aux *.log *.bbl *.blg *.toc *.out *.png *.html
 
 #------------------------------------------------------------
 # Other Targets
+
+htmls_with_bib = $(addsuffix .html, $(docs_with_bib))
+htmls_without_bib = $(addsuffix .html, $(docs_without_bib))
+htmls = $(htmls_with_bib) $(htmls_without_bib)
+
+html : $(htmls)
+
+$(htmls_with_bib): %.html: $(srcdir)/%.tex $(srcs) $(figs) $(bibs)
+	$(HTLATEX) $* xhtml
+	$(BIBTEX) $*
+	$(HTLATEX) $* xhtml
+
+$(htmls_without_bib): %.html: $(srcdir)/%.tex $(srcs) $(figs)
+	$(HTLATEX) $* xhtml
+	$(HTLATEX) $* xhtml
 
 clean :
 	rm -rf $(junk) *~ \#*
